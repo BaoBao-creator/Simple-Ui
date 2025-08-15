@@ -453,17 +453,17 @@ function SimpleUI:CreateWindow(params)
             -- Xử lý kéo thả handle
             local dragging = false
             handle.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = true
                 end
             end)
             handle.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                if input.UserInputType == Enum.UserInputType.MouseButton1 input.UserInputType == Enum.UserInputType.Touch then
                     dragging = false
                 end
             end)
             UserInputService.InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     -- Tính giá trị mới theo vị trí trượt
                     local absPos = track.AbsolutePosition.X
                     local absSize = track.AbsoluteSize.X
