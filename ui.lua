@@ -136,167 +136,85 @@ function SimpleUI:CreateWindow(params)
 
         -- Slider dễ kéo
         function tabObj:CreateSlider(config)
+            config = config or {}
             local name = config.Name or "Slider"
             local range = config.Range or {0, 100}
             local inc = config.Increment or 1
             local suffix = config.Suffix or ""
             local init = config.CurrentValue or range[1]
             local callback = config.Callback or function() end
-
+            -- Container khung cho slider
             local sliderContainer = Instance.new("Frame")
+            sliderContainer.Name = "Slider_"..name
             sliderContainer.Parent = contentScroll
-            sliderContainer.Size = UDim2.new(1, 0, 0, 30)
             sliderContainer.BackgroundTransparency = 1
-
+            sliderContainer.Size = UDim2.new(1, 0, 0, 30)
+            sliderContainer.LayoutOrder = contentLayout.AbsoluteContentSize.Y
+            -- Label tên
             local nameLabel = Instance.new("TextLabel")
             nameLabel.Parent = sliderContainer
             nameLabel.Size = UDim2.new(0.4, 0, 1, 0)
+            nameLabel.Position = UDim2.new(0, 0, 0, 0)
             nameLabel.BackgroundTransparency = 1
+            nameLabel.Font = Enum.Font.SourceSans
             nameLabel.TextColor3 = Color3.new(1,1,1)
+            nameLabel.TextSize = 18
             nameLabel.Text = name
-
-            local track = Instance.new("TextButton")
+            nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            -- Khung thanh trượt (background)
+            local track = Instance.new("Frame")
             track.Parent = sliderContainer
-            track.Size = UDim2.new(0.58, 0, 0, 10)
-            track.Position = UDim2.new(0.4, 0, 0.5, -5)
+            track.Size = UDim2.new(0.58, 0, 0, 8)
+            track.Position = UDim2.new(0.4, 0, 0.5, -4)
             track.BackgroundColor3 = Color3.new(1,1,1)
-
+            track.BorderColor3 = Color3.new(0,0,0)
+            track.BorderSizePixel = 2
+            -- Nút kéo (handle)
             local handle = Instance.new("Frame")
             handle.Parent = track
-            handle.Size = UDim2.new(0, 14, 1.5, 0)
-            handle.Position = UDim2.new((init - range[1])/(range[2]-range[1]), -7, 0, -3)
+            handle.Size = UDim2.new(0, 10, 1, 0)
+            handle.Position = UDim2.new((init - range[1])/(range[2]-range[1]), 0, 0, 0)
             handle.BackgroundColor3 = Color3.new(0,0,0)
-
+            handle.BorderColor3 = Color3.new(1,1,1)
+            handle.BorderSizePixel = 2
+            -- Text hiển thị giá trị (bên phải tên nếu cần)
             local valueLabel = Instance.new("TextLabel")
             valueLabel.Parent = sliderContainer
             valueLabel.Size = UDim2.new(0.58, 0, 1, 0)
             valueLabel.Position = UDim2.new(0.4, 0, 1, -30)
             valueLabel.BackgroundTransparency = 1
+            valueLabel.Font = Enum.Font.SourceSans
             valueLabel.TextColor3 = Color3.new(1,1,1)
+            valueLabel.TextSize = 18
             valueLabel.Text = tostring(init)..suffix
-
-            local function setValueFromX(x)
-                local absPos = track.AbsolutePosition.X
-                local absSize = track.AbsoluteSize.X
-                local mouseX = math.clamp(x, absPos, absPos + absSize)
-                local ratio = (mouseX - absPos) / absSize
-                local value = math.floor((range[1] + ratio * (range[2]-range[1]))/inc + 0.5) * inc
-                value = math.clamp(value, range[1], range[2])
-                handle.Position = UDim2.new((value - range[1])/(range[2]-range[1]), -7, 0, -3)
-                valueLabel.Text = tostring(value)..suffix
-                callback(value)
-            end
-
-            track.MouseButton1Down:Connect(function()
-                setValueFromX(UserInputService:GetMouseLocation().X)
-                local moveConn
-                local releaseConn
-                moveConn = UserInputService.InputChanged:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseMovement then
-                        setValueFromX(input.Position.X)
-                    end
-                end)
-                releaseConn = UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        moveConn:Disconnect()
-                        releaseConn:Disconnect()
-                    end
-                end)
-            end)
-        end
-
-        -- Dropdown hỗ trợ multi
-        function tabObj:CreateDropdown(config)
-            local name = config.Name or "Dropdown"
-            local options = config.Options or {}
-            local multi = config.Multi or false
-            local callback = config.Callback or function() end
-
-            local dropContainer = Instance.new("Frame")
-            dropContainer.Parent = contentScroll
-            dropContainer.Size = UDim2.new(1, 0, 0, 30)
-            dropContainer.BackgroundTransparency = 1
-
-            local nameLabel = Instance.new("TextLabel")
-            nameLabel.Parent = dropContainer
-            nameLabel.Size = UDim2.new(0.4, 0, 1, 0)
-            nameLabel.BackgroundTransparency = 1
-            nameLabel.TextColor3 = Color3.new(1,1,1)
-            nameLabel.Text = name
-
-            local selectedBtn = Instance.new("TextButton")
-            selectedBtn.Parent = dropContainer
-            selectedBtn.Size = UDim2.new(0.6, 0, 1, -6)
-            selectedBtn.Position = UDim2.new(0.4, 0, 0, 3)
-            selectedBtn.BackgroundColor3 = Color3.new(1,1,1)
-            selectedBtn.TextColor3 = Color3.new(0,0,0)
-            selectedBtn.Text = multi and "Chọn ▼" or (options[1] or "").." ▼"
-
-            local optionsFrame = Instance.new("Frame")
-            optionsFrame.Parent = dropContainer
-            optionsFrame.Position = UDim2.new(0, 0, 0, 30)
-            optionsFrame.BackgroundColor3 = Color3.new(0.1,0.1,0.1)
-            optionsFrame.Visible = false
-
-            local optionsLayout = Instance.new("UIListLayout", optionsFrame)
-            optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-            local selectedList = {}
-            local current = options[1] or ""
-
-            local function updateButtonText()
-                if multi then
-                    selectedBtn.Text = (#selectedList == 0) and "Chọn ▼" or (table.concat(selectedList, ", ") .. " ▼")
-                else
-                    selectedBtn.Text = current.." ▼"
-                end
-            end
-
-            for _, opt in ipairs(options) do
-                local optBtn = Instance.new("TextButton")
-                optBtn.Parent = optionsFrame
-                optBtn.Size = UDim2.new(1, 0, 0, 25)
-                optBtn.BackgroundColor3 = Color3.new(0,0,0)
-                optBtn.TextColor3 = Color3.new(1,1,1)
-                optBtn.Text = multi and "[ ] "..opt or opt
-
-                local isSelected = false
-                optBtn.MouseButton1Click:Connect(function()
-                    if multi then
-                        isSelected = not isSelected
-                        if isSelected then
-                            table.insert(selectedList, opt)
-                            optBtn.Text = "[✔] "..opt
-                        else
-                            for i,v in ipairs(selectedList) do
-                                if v == opt then
-                                    table.remove(selectedList, i)
-                                    break
-                                end
-                            end
-                            optBtn.Text = "[ ] "..opt
-                        end
-                        updateButtonText()
-                        callback(selectedList)
-                    else
-                        current = opt
-                        updateButtonText()
-                        optionsFrame.Visible = false
-                        dropContainer.Size = UDim2.new(1, 0, 0, 30)
-                        callback(current)
-                    end
-                end)
-            end
-
-            selectedBtn.MouseButton1Click:Connect(function()
-                optionsFrame.Visible = not optionsFrame.Visible
-                if optionsFrame.Visible then
-                    optionsFrame.Size = UDim2.new(1, 0, 0, #options * 25)
-                    dropContainer.Size = UDim2.new(1, 0, 0, 30 + #options * 25)
-                else
-                    dropContainer.Size = UDim2.new(1, 0, 0, 30)
+            valueLabel.TextXAlignment = Enum.TextXAlignment.Center
+            -- Xử lý kéo thả handle
+            local dragging = false
+            handle.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
                 end
             end)
+            handle.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = false
+                end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    -- Tính giá trị mới theo vị trí trượt
+                    local absPos = track.AbsolutePosition.X
+                    local absSize = track.AbsoluteSize.X
+                    local mouseX = math.clamp(input.Position.X, absPos, absPos + absSize)
+                    local ratio = (mouseX - absPos) / absSize
+                    local value = math.floor((range[1] + ratio * (range[2]-range[1]))/inc + 0.5) * inc
+                    value = math.clamp(value, range[1], range[2])
+                    handle.Position = UDim2.new((value - range[1])/(range[2]-range[1]), 0, 0, 0)
+                    valueLabel.Text = tostring(value)..suffix
+                    callback(value)
+                end
+            end)
+            contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
         end
 
         self.Tabs[#self.Tabs+1] = tabObj
