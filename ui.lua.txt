@@ -309,92 +309,98 @@ function SimpleUI:CreateWindow(params)
             end)
             contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
         end
-        -- Hàm tạo Dropdown (menu chọn)
+        -- Dropdown hỗ trợ multi
         function tabObj:CreateDropdown(config)
-            config = config or {}
             local name = config.Name or "Dropdown"
             local options = config.Options or {}
+            local multi = config.Multi or false
             local callback = config.Callback or function() end
-            -- Container khung cho dropdown
+
             local dropContainer = Instance.new("Frame")
-            dropContainer.Name = "Dropdown_"..name
             dropContainer.Parent = contentScroll
-            dropContainer.BackgroundTransparency = 1
             dropContainer.Size = UDim2.new(1, 0, 0, 30)
-            dropContainer.LayoutOrder = contentLayout.AbsoluteContentSize.Y
-            -- Label tên
+            dropContainer.BackgroundTransparency = 1
+
             local nameLabel = Instance.new("TextLabel")
             nameLabel.Parent = dropContainer
             nameLabel.Size = UDim2.new(0.4, 0, 1, 0)
-            nameLabel.Position = UDim2.new(0, 0, 0, 0)
             nameLabel.BackgroundTransparency = 1
-            nameLabel.Font = Enum.Font.SourceSans
             nameLabel.TextColor3 = Color3.new(1,1,1)
-            nameLabel.TextSize = 18
             nameLabel.Text = name
-            nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-            -- Nút hiển thị tùy chọn đã chọn
+
             local selectedBtn = Instance.new("TextButton")
             selectedBtn.Parent = dropContainer
             selectedBtn.Size = UDim2.new(0.6, 0, 1, -6)
             selectedBtn.Position = UDim2.new(0.4, 0, 0, 3)
             selectedBtn.BackgroundColor3 = Color3.new(1,1,1)
-            selectedBtn.BorderColor3 = Color3.new(0,0,0)
-            selectedBtn.Font = Enum.Font.SourceSans
             selectedBtn.TextColor3 = Color3.new(0,0,0)
-            selectedBtn.TextSize = 18
-            -- Tạo khung chứa các tùy chọn, ban đầu ẩn
+            selectedBtn.Text = multi and "Chọn ▼" or (options[1] or "").." ▼"
+
             local optionsFrame = Instance.new("Frame")
             optionsFrame.Parent = dropContainer
-            optionsFrame.Size = UDim2.new(1, 0, 0, 0)
             optionsFrame.Position = UDim2.new(0, 0, 0, 30)
-            optionsFrame.BackgroundTransparency = 0
             optionsFrame.BackgroundColor3 = Color3.new(0.1,0.1,0.1)
             optionsFrame.Visible = false
+
             local optionsLayout = Instance.new("UIListLayout", optionsFrame)
             optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            optionsLayout.Padding = UDim.new(0, 2)
-            -- Khởi tạo lựa chọn đầu tiên
+
+            local selectedList = {}
             local current = options[1] or ""
-            selectedBtn.Text = current.." ▼"
-            -- Tạo các nút chọn
-            for i,opt in ipairs(options) do
+
+            local function updateButtonText()
+                if multi then
+                    selectedBtn.Text = (#selectedList == 0) and "Chọn ▼" or (table.concat(selectedList, ", ") .. " ▼")
+                else
+                    selectedBtn.Text = current.." ▼"
+                end
+            end
+
+            for _, opt in ipairs(options) do
                 local optBtn = Instance.new("TextButton")
                 optBtn.Parent = optionsFrame
-                optBtn.Size = UDim2.new(1, 0, 0, 30)
-                optBtn.LayoutOrder = i
+                optBtn.Size = UDim2.new(1, 0, 0, 25)
                 optBtn.BackgroundColor3 = Color3.new(0,0,0)
-                optBtn.BorderColor3 = Color3.new(1,1,1)
-                optBtn.BorderSizePixel = 2
-                optBtn.Font = Enum.Font.SourceSans
                 optBtn.TextColor3 = Color3.new(1,1,1)
-                optBtn.TextSize = 18
-                optBtn.Text = opt
-                optBtn.TextXAlignment = Enum.TextXAlignment.Left
+                optBtn.Text = multi and "[ ] "..opt or opt
+
+                local isSelected = false
                 optBtn.MouseButton1Click:Connect(function()
-                    current = opt
-                    selectedBtn.Text = current.." ▼"
-                    optionsFrame.Visible = false
-                    dropContainer.Size = UDim2.new(1, 0, 0, 30)
-                    -- Cập nhật canvas sau khi thu gọn
-                    contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
-                    callback(current)
+                    if multi then
+                        isSelected = not isSelected
+                        if isSelected then
+                            table.insert(selectedList, opt)
+                            optBtn.Text = "[✔] "..opt
+                        else
+                            for i,v in ipairs(selectedList) do
+                                if v == opt then
+                                    table.remove(selectedList, i)
+                                    break
+                                end
+                            end
+                            optBtn.Text = "[ ] "..opt
+                        end
+                        updateButtonText()
+                        callback(selectedList)
+                    else
+                        current = opt
+                        updateButtonText()
+                        optionsFrame.Visible = false
+                        dropContainer.Size = UDim2.new(1, 0, 0, 30)
+                        callback(current)
+                    end
                 end)
             end
-            -- Khi nhấn nút, toggle danh sách options
+
             selectedBtn.MouseButton1Click:Connect(function()
+                optionsFrame.Visible = not optionsFrame.Visible
                 if optionsFrame.Visible then
-                    optionsFrame.Visible = false
-                    dropContainer.Size = UDim2.new(1, 0, 0, 30)
+                    optionsFrame.Size = UDim2.new(1, 0, 0, #options * 25)
+                    dropContainer.Size = UDim2.new(1, 0, 0, 30 + #options * 25)
                 else
-                    local optCount = #options
-                    optionsFrame.Size = UDim2.new(1, 0, 0, optCount*30)
-                    optionsFrame.Visible = true
-                    dropContainer.Size = UDim2.new(1, 0, 0, 30 + optCount*30)
+                    dropContainer.Size = UDim2.new(1, 0, 0, 30)
                 end
-                contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
             end)
-            contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
         end
         -- Hàm tạo Slider (thanh trượt)
         function tabObj:CreateSlider(config)
