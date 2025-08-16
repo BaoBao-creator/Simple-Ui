@@ -9,6 +9,7 @@ local window = simpleui:CreateWindow({Name= "Simple Hub, BaoBao developer"})
 Create a tab
 --------------
 local tab = window:CreateTab("Tab")
+------------------
 Create a toggle
 --------------------
 tab:CreateToggle({
