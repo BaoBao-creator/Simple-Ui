@@ -20,3 +20,13 @@ tab:CreateToggle({
     end
 })
 ----------------------------
+Create a dropdown 
+-------------------
+tab:CreateDropdown({
+    Name = "Dropdown",
+    Options = {},
+    Multi = false,
+    Callback = function(v) 
+        print(v)
+    end
+})
