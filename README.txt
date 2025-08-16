@@ -2,9 +2,16 @@ Load Simple UI
 ------------------
 local simpleui = loadstring(game:HttpGet("https://raw.githubusercontent.com/BaoBao-creator/Simple-Ui/main/ui.lua"))()
 ------------------------------
+Create window
+-----------------
+local window = simpleui:CreateWindow({Name= "Simple Hub, BaoBao developer"})
+---------------------------------------
+Create a tab
+--------------
+local tab = window:CreateTab("Tab")
 Create a toggle
 --------------------
-CreateToggle({
+tab:CreateToggle({
     Name = "Toggle",
     CurrentValue = false,
     Callback = function(v) -- The function run when toggle change, v is the value true/false
