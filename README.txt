@@ -15,7 +15,20 @@ Create a toggle
 tab:CreateToggle({
     Name = "Toggle",
     CurrentValue = false,
-    Callback = function(v) -- The function run when toggle change, v is the value true/false
+    Callback = function(v)
+        print(v)
+    end
+})
+------------------
+Create a textbox
+-----------------
+tab:CreateTextBox({
+    Name = "Input",
+    PlaceholderText = "",
+    RemoveTextAfterFocusLost = false,
+    CharacterLimit = 0,
+    NumbersOnly = false,
+    Callback = function(v)
         print(v)
     end
 })
