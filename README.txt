@@ -19,6 +19,15 @@ tab:CreateToggle({
         print(v)
     end
 })
+-------------
+Create a button 
+-----------------
+tab:CreateButton({
+    Name = "Button",
+    Callback = function()
+        print(1)
+    end
+})
 ------------------
 Create a textbox
 -----------------
