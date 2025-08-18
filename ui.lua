@@ -336,6 +336,9 @@ function SimpleUI:CreateWindow(params)
             optionsFrame.Parent = dropContainer
             optionsFrame.Position = UDim2.new(0, 0, 0, 30)
             optionsFrame.BackgroundColor3 = Color3.new(0.1,0.1,0.1)
+            optionsFrame.Size = UDim2.new(1, 0, 0, 0)
+            optionsFrame.ClipsDescendants = false
+            optionsFrame.ZIndex = 10
             optionsFrame.Visible = false
             local optionsLayout = Instance.new("UIListLayout", optionsFrame)
             optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
