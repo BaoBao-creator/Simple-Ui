@@ -315,19 +315,16 @@ function SimpleUI:CreateWindow(params)
             local options = config.Options or {}
             local multi = config.Multi or false
             local callback = config.Callback or function() end
-
             local dropContainer = Instance.new("Frame")
             dropContainer.Parent = contentScroll
             dropContainer.Size = UDim2.new(1, 0, 0, 30)
             dropContainer.BackgroundTransparency = 1
-
             local nameLabel = Instance.new("TextLabel")
             nameLabel.Parent = dropContainer
             nameLabel.Size = UDim2.new(0.4, 0, 1, 0)
             nameLabel.BackgroundTransparency = 1
             nameLabel.TextColor3 = Color3.new(1,1,1)
             nameLabel.Text = name
-
             local selectedBtn = Instance.new("TextButton")
             selectedBtn.Parent = dropContainer
             selectedBtn.Size = UDim2.new(0.6, 0, 1, -6)
@@ -335,19 +332,15 @@ function SimpleUI:CreateWindow(params)
             selectedBtn.BackgroundColor3 = Color3.new(1,1,1)
             selectedBtn.TextColor3 = Color3.new(0,0,0)
             selectedBtn.Text = multi and "Chọn ▼" or (options[1] or "").." ▼"
-
             local optionsFrame = Instance.new("Frame")
             optionsFrame.Parent = dropContainer
             optionsFrame.Position = UDim2.new(0, 0, 0, 30)
             optionsFrame.BackgroundColor3 = Color3.new(0.1,0.1,0.1)
             optionsFrame.Visible = false
-
             local optionsLayout = Instance.new("UIListLayout", optionsFrame)
             optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
             local selectedList = {}
             local current = options[1] or ""
-
             local function updateButtonText()
                 if multi then
                     selectedBtn.Text = (#selectedList == 0) and "Chọn ▼" or (table.concat(selectedList, ", ") .. " ▼")
@@ -355,48 +348,78 @@ function SimpleUI:CreateWindow(params)
                     selectedBtn.Text = current.." ▼"
                 end
             end
-
-            for _, opt in ipairs(options) do
-                local optBtn = Instance.new("TextButton")
-                optBtn.Parent = optionsFrame
-                optBtn.Size = UDim2.new(1, 0, 0, 25)
-                optBtn.BackgroundColor3 = Color3.new(0,0,0)
-                optBtn.TextColor3 = Color3.new(1,1,1)
-                optBtn.Text = multi and "[ ] "..opt or opt
-
-                local isSelected = false
-                optBtn.MouseButton1Click:Connect(function()
-                    if multi then
-                        isSelected = not isSelected
-                        if isSelected then
-                            table.insert(selectedList, opt)
-                            optBtn.Text = "[✔] "..opt
-                        else
-                            for i,v in ipairs(selectedList) do
-                                if v == opt then
-                                    table.remove(selectedList, i)
-                                    break
+            local startIndex = 1
+            local maxVisible = 5
+            local function renderOptions()
+                optionsFrame:ClearAllChildren()
+                optionsLayout.Parent = optionsFrame
+                if startIndex > 1 then
+                    local prevBtn = Instance.new("TextButton")
+                    prevBtn.Parent = optionsFrame
+                    prevBtn.Size = UDim2.new(1, 0, 0, 25)
+                    prevBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+                    prevBtn.TextColor3 = Color3.new(1,1,1)
+                    prevBtn.Text = "..."
+                    prevBtn.MouseButton1Click:Connect(function()
+                        startIndex = math.max(1, startIndex - maxVisible)
+                        renderOptions()
+                    end)
+                end
+                for i = startIndex, math.min(startIndex + maxVisible - 1, #options) do
+                    local opt = options[i]
+                    local optBtn = Instance.new("TextButton")
+                    optBtn.Parent = optionsFrame
+                    optBtn.Size = UDim2.new(1, 0, 0, 25)
+                    optBtn.BackgroundColor3 = Color3.new(0,0,0)
+                    optBtn.TextColor3 = Color3.new(1,1,1)
+                    optBtn.Text = multi and "[ ] "..opt or opt
+                    local isSelected = false
+                    optBtn.MouseButton1Click:Connect(function()
+                        if multi then
+                            isSelected = not isSelected
+                            if isSelected then
+                                table.insert(selectedList, opt)
+                                optBtn.Text = "[✔] "..opt
+                            else
+                                for i,v in ipairs(selectedList) do
+                                    if v == opt then
+                                        table.remove(selectedList, i)
+                                        break
+                                    end
                                 end
+                                optBtn.Text = "[ ] "..opt
                             end
-                            optBtn.Text = "[ ] "..opt
+                            updateButtonText()
+                            callback(selectedList)
+                        else
+                            current = opt
+                            updateButtonText()
+                            optionsFrame.Visible = false
+                            dropContainer.Size = UDim2.new(1, 0, 0, 30)
+                            callback(current)
                         end
-                        updateButtonText()
-                        callback(selectedList)
-                    else
-                        current = opt
-                        updateButtonText()
-                        optionsFrame.Visible = false
-                        dropContainer.Size = UDim2.new(1, 0, 0, 30)
-                        callback(current)
-                    end
-                end)
+                    end)
+                end
+                if startIndex + maxVisible - 1 < #options then
+                    local nextBtn = Instance.new("TextButton")
+                    nextBtn.Parent = optionsFrame
+                    nextBtn.Size = UDim2.new(1, 0, 0, 25)
+                    nextBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
+                    nextBtn.TextColor3 = Color3.new(1,1,1)
+                    nextBtn.Text = "..."
+                    nextBtn.MouseButton1Click:Connect(function()
+                        startIndex = math.min(#options - maxVisible + 1, startIndex + maxVisible)
+                        renderOptions()
+                    end)
+                end
+                local count = optionsFrame.UIListLayout.AbsoluteContentSize.Y
+                optionsFrame.Size = UDim2.new(1, 0, 0, count)
+                dropContainer.Size = UDim2.new(1, 0, 0, 30 + count)
             end
-
             selectedBtn.MouseButton1Click:Connect(function()
                 optionsFrame.Visible = not optionsFrame.Visible
                 if optionsFrame.Visible then
-                    optionsFrame.Size = UDim2.new(1, 0, 0, #options * 25)
-                    dropContainer.Size = UDim2.new(1, 0, 0, 30 + #options * 25)
+                    renderOptions()
                 else
                     dropContainer.Size = UDim2.new(1, 0, 0, 30)
                 end
