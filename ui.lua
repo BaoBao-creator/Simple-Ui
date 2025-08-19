@@ -311,122 +311,160 @@ function SimpleUI:CreateWindow(params)
         end
         -- Dropdown hỗ trợ multi
         function tabObj:CreateDropdown(config)
+            config = config or {}
             local name = config.Name or "Dropdown"
             local options = config.Options or {}
             local multi = config.Multi or false
             local callback = config.Callback or function() end
+            local PAGE_SIZE = 5
             local dropContainer = Instance.new("Frame")
+            dropContainer.Name = "Dropdown_"..name
             dropContainer.Parent = contentScroll
-            dropContainer.Size = UDim2.new(1, 0, 0, 30)
             dropContainer.BackgroundTransparency = 1
+            dropContainer.Size = UDim2.new(1, 0, 0, 30)
+            dropContainer.LayoutOrder = contentLayout.AbsoluteContentSize.Y
             local nameLabel = Instance.new("TextLabel")
             nameLabel.Parent = dropContainer
             nameLabel.Size = UDim2.new(0.4, 0, 1, 0)
             nameLabel.BackgroundTransparency = 1
+            nameLabel.Font = Enum.Font.SourceSans
             nameLabel.TextColor3 = Color3.new(1,1,1)
+            nameLabel.TextSize = 18
+            nameLabel.TextXAlignment = Enum.TextXAlignment.Left
             nameLabel.Text = name
             local selectedBtn = Instance.new("TextButton")
             selectedBtn.Parent = dropContainer
             selectedBtn.Size = UDim2.new(0.6, 0, 1, -6)
             selectedBtn.Position = UDim2.new(0.4, 0, 0, 3)
             selectedBtn.BackgroundColor3 = Color3.new(1,1,1)
+            selectedBtn.BorderColor3 = Color3.new(0,0,0)
+            selectedBtn.Font = Enum.Font.SourceSans
             selectedBtn.TextColor3 = Color3.new(0,0,0)
-            selectedBtn.Text = multi and "Chọn ▼" or (options[1] or "").." ▼"
+            selectedBtn.TextSize = 18
             local optionsFrame = Instance.new("Frame")
             optionsFrame.Parent = dropContainer
+            optionsFrame.Name = "Options"
             optionsFrame.Position = UDim2.new(0, 0, 0, 30)
             optionsFrame.BackgroundColor3 = Color3.new(0.1,0.1,0.1)
-            optionsFrame.Size = UDim2.new(1, 0, 0, 0)
-            optionsFrame.ClipsDescendants = false
-            optionsFrame.ZIndex = 10
+            optionsFrame.BorderColor3 = Color3.new(1,1,1)
+            optionsFrame.BorderSizePixel = 2
             optionsFrame.Visible = false
+            optionsFrame.ZIndex = 5
             local optionsLayout = Instance.new("UIListLayout", optionsFrame)
             optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            optionsLayout.Padding = UDim.new(0, 0)
             local selectedList = {}
             local current = options[1] or ""
             local function updateButtonText()
                 if multi then
-                    selectedBtn.Text = (#selectedList == 0) and "Chọn ▼" or (table.concat(selectedList, ", ") .. " ▼")
+                    if #selectedList == 0 then
+                        selectedBtn.Text = "Chọn ▼"
+                    else
+                        selectedBtn.Text = table.concat(selectedList, ", ") .. " ▼"
+                    end
                 else
-                    selectedBtn.Text = current.." ▼"
+                    selectedBtn.Text = (current ~= "" and current or "Chọn") .. " ▼"
                 end
             end
-            local startIndex = 1
-            local maxVisible = 5
-            local function renderOptions()
-                optionsFrame:ClearAllChildren()
-                optionsLayout.Parent = optionsFrame
-                if startIndex > 1 then
-                    local prevBtn = Instance.new("TextButton")
-                    prevBtn.Parent = optionsFrame
-                    prevBtn.Size = UDim2.new(1, 0, 0, 25)
-                    prevBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
-                    prevBtn.TextColor3 = Color3.new(1,1,1)
-                    prevBtn.Text = "..."
-                    prevBtn.MouseButton1Click:Connect(function()
-                        startIndex = math.max(1, startIndex - maxVisible)
-                        renderOptions()
-                    end)
+            updateButtonText()
+            local page = 0
+            local function totalPages()
+                if #options == 0 then return 1 end
+                    return math.ceil(#options / PAGE_SIZE)
+            end
+            local function adjustHeights(rowCount)
+                if optionsFrame.Visible then
+                    optionsFrame.Size = UDim2.new(1, 0, 0, rowCount * 25)
+                    dropContainer.Size = UDim2.new(1, 0, 0, 30 + rowCount * 25)
+                else
+                    dropContainer.Size = UDim2.new(1, 0, 0, 30)
                 end
-                for i = startIndex, math.min(startIndex + maxVisible - 1, #options) do
+                contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
+            end
+            local function clearOptions()
+                for _, ch in ipairs(optionsFrame:GetChildren()) do
+                    if ch ~= optionsLayout then ch:Destroy() end
+                end
+            end
+            local function makeRow(text, onClick)
+                local btn = Instance.new("TextButton")
+                btn.Parent = optionsFrame
+                btn.Size = UDim2.new(1, 0, 0, 25)
+                btn.BackgroundColor3 = Color3.new(0,0,0)
+                btn.BorderSizePixel = 0
+                btn.Font = Enum.Font.SourceSans
+                btn.TextSize = 18
+                btn.TextColor3 = Color3.new(1,1,1)
+                btn.TextXAlignment = Enum.TextXAlignment.Left
+                btn.Text = text
+                btn.ZIndex = 6
+                btn.MouseButton1Click:Connect(onClick)
+                return btn
+            end
+            local function renderPage()
+                clearOptions()
+                local rows = 0
+                local pages = totalPages()
+                if page > 0 then
+                    makeRow("...", function() page = page - 1 renderPage() end)
+                    rows = rows + 1
+                end
+                local startIdx = page * PAGE_SIZE + 1
+                local endIdx = math.min(#options, startIdx + PAGE_SIZE - 1)
+                for i = startIdx, endIdx do
                     local opt = options[i]
-                    local optBtn = Instance.new("TextButton")
-                    optBtn.Parent = optionsFrame
-                    optBtn.Size = UDim2.new(1, 0, 0, 25)
-                    optBtn.BackgroundColor3 = Color3.new(0,0,0)
-                    optBtn.TextColor3 = Color3.new(1,1,1)
-                    optBtn.Text = multi and "[ ] "..opt or opt
-                    local isSelected = false
-                    optBtn.MouseButton1Click:Connect(function()
+                    local isSelected = table.find(selectedList, opt) ~= nil
+                    local label = multi and ((isSelected and "[✔] " or "[ ] ") .. opt) or opt
+                    makeRow(label, function()
                         if multi then
-                            isSelected = not isSelected
                             if isSelected then
-                                table.insert(selectedList, opt)
-                                optBtn.Text = "[✔] "..opt
+                                local idx = table.find(selectedList, opt)
+                                if idx then table.remove(selectedList, idx) end
                             else
-                                for i,v in ipairs(selectedList) do
-                                    if v == opt then
-                                        table.remove(selectedList, i)
-                                        break
-                                    end
-                                end
-                                optBtn.Text = "[ ] "..opt
+                                table.insert(selectedList, opt)
                             end
+                            renderPage()
                             updateButtonText()
                             callback(selectedList)
                         else
                             current = opt
                             updateButtonText()
                             optionsFrame.Visible = false
-                            dropContainer.Size = UDim2.new(1, 0, 0, 30)
+                            adjustHeights(0)
                             callback(current)
                         end
                     end)
+                    rows = rows + 1
                 end
-                if startIndex + maxVisible - 1 < #options then
-                    local nextBtn = Instance.new("TextButton")
-                    nextBtn.Parent = optionsFrame
-                    nextBtn.Size = UDim2.new(1, 0, 0, 25)
-                    nextBtn.BackgroundColor3 = Color3.new(0.2,0.2,0.2)
-                    nextBtn.TextColor3 = Color3.new(1,1,1)
-                    nextBtn.Text = "..."
-                    nextBtn.MouseButton1Click:Connect(function()
-                        startIndex = math.min(#options - maxVisible + 1, startIndex + maxVisible)
-                        renderOptions()
-                    end)
+                if page < pages - 1 then
+                    makeRow("...", function() page = page + 1 renderPage() end)
+                    rows = rows + 1
                 end
-                local count = optionsFrame.UIListLayout.AbsoluteContentSize.Y
-                optionsFrame.Size = UDim2.new(1, 0, 0, count)
-                dropContainer.Size = UDim2.new(1, 0, 0, 30 + count)
+                adjustHeights(rows)
             end
             selectedBtn.MouseButton1Click:Connect(function()
                 optionsFrame.Visible = not optionsFrame.Visible
                 if optionsFrame.Visible then
-                    renderOptions()
+                    page = math.clamp(page, 0, math.max(0, totalPages()-1))
+                    renderPage()
                 else
-                    dropContainer.Size = UDim2.new(1, 0, 0, 30)
+                    adjustHeights(0)
                 end
             end)
+            local api = {}
+            function api:SetOptions(newOptions)
+                options = newOptions or {}
+                page = 0
+                selectedList = {}
+                if not multi then current = options[1] or "" end
+                updateButtonText()
+                if optionsFrame.Visible then renderPage() end
+            end
+            function api:GetValue()
+                return multi and selectedList or current
+            end
+            contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
+            return api
         end
         -- Hàm tạo Slider (thanh trượt)
         function tabObj:CreateSlider(config)
