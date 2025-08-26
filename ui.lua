@@ -443,4 +443,36 @@ function SimpleUI:CreateWindow(params)
                 adjustHeights(rows)
             end
             selectedBtn.MouseButton1Click:Connect(function()
-                optionsFrame.Visible
+                optionsFrame.Visible = not optionsFrame.Visible
+                if optionsFrame.Visible then
+                    page = math.clamp(page, 0, math.max(0, totalPages()-1))
+                    renderPage()
+                else
+                    adjustHeights(0)
+                end
+            end)
+            local api = {}
+            function api:SetOptions(newOptions)
+                options = newOptions or {}
+                page = 0
+                selectedList = {}
+                if not multi then current = options[1] or "" end
+                updateButtonText()
+                if optionsFrame.Visible then renderPage() end
+            end
+            function api:GetValue()
+                return multi and selectedList or current
+            end
+            function api:Refresh()
+                local newOptions = config.Callback()
+                if type(newOptions) == "table" then
+                    self:SetOptions(newOptions)
+                end
+            end
+            refreshBtn.MouseButton1Click:Connect(function()
+                api:Refresh()
+            end)
+            contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
+            return api
+        end
+        -- Hàm tạo Slider (thanh trượt)
