@@ -340,7 +340,7 @@ function SimpleUI:CreateWindow(params)
             refreshBtn.Font = Enum.Font.SourceSans
             refreshBtn.TextColor3 = Color3.new(1, 1, 1)
             refreshBtn.TextSize = 18
-            refreshBtn.Text = "↻"
+            refreshBtn.Text = "Refesh"
             local optionsFrame = Instance.new("Frame")
             optionsFrame.Parent = dropContainer
             optionsFrame.Name = "Options"
