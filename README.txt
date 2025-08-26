@@ -1,60 +1,74 @@
-Load Simple UI
-------------------
+--// Load Simple UI
 local simpleui = loadstring(game:HttpGet("https://raw.githubusercontent.com/BaoBao-creator/Simple-Ui/main/ui.lua"))()
-------------------------------
-Create window
------------------
-local window = simpleui:CreateWindow({Name= "Simple Hub, BaoBao developer"})
----------------------------------------
-Create a tab
---------------
-local tab = window:CreateTab("Tab")
-------------------
-Create a toggle
---------------------
+
+--// Create Window
+local window = simpleui:CreateWindow({Name = "✨ Simple Hub - BaoBao Developer"})
+
+--// Create Tab
+local tab = window:CreateTab("Main Tab")
+
+--// 🔘 Toggle
 tab:CreateToggle({
-    Name = "Toggle",
+    Name = "Auto Farm",
     CurrentValue = false,
     Callback = function(v)
-        print(v)
+        print("Auto Farm:", v)
     end
 })
--------------
-Create a button 
------------------
+
+--// ⏺️ Button
 tab:CreateButton({
-    Name = "Button",
+    Name = "Claim Reward",
     Callback = function()
-        print(1)
+        print("Reward claimed!")
     end
 })
-------------------
-Create a textbox
------------------
+
+--// 📝 TextBox
 tab:CreateTextBox({
-    Name = "Input",
-    PlaceholderText = "",
-    RemoveTextAfterFocusLost = false,
-    CharacterLimit = 0,
-    NumbersOnly = false,
+    Name = "Enter Username",
+    Placeholder = "Type here...",
+    CurrentValue = "",
     Callback = function(v)
-        print(v)
+        print("Username:", v)
     end
 })
-----------------------------
-Create a dropdown 
--------------------
-tab:CreateDropdown({
-    Name = "Dropdown",
-    Options = {},
-    Multi = false,
-    Callback = function(v) -- v only be nil when user click refesh button
+
+--// 📂 Dropdown
+local dropdown = tab:CreateDropdown({
+    Name = "Select Pet",
+    Options = {"Dog", "Cat", "Bird"},
+    Multi = false, -- true = multi select
+    Callback = function(v)
         if v ~= nil then
-            print(v)
+            print("Selected:", v)
         else
-            return {} -- the list will be update to Options when refesh
+            -- return new list when refresh button is pressed
+            return {"Dog", "Cat", "Bird", "Dragon"}
         end
     end
 })
--- you can local yourdropdown = tab:CreateDropdown....
--- and use yourdropdown:Refresh()
+
+-- Example usage of Dropdown API:
+-- dropdown:SetOptions({"Apple", "Banana", "Orange"})
+-- print(dropdown:GetValue())
+-- dropdown:Refresh()
+
+--// 🎚️ Slider
+tab:CreateSlider({
+    Name = "Volume",
+    Range = {0, 100},
+    Increment = 5,
+    Suffix = "%",
+    CurrentValue = 50,
+    Callback = function(v)
+        print("Volume:", v)
+    end
+})
+
+--// 🔔 Notification
+simpleui:Notify({
+    Title = "Simple UI",
+    Content = "Welcome to Simple Hub!",
+    Duration = 3
+})
