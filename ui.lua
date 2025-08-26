@@ -476,3 +476,167 @@ function SimpleUI:CreateWindow(params)
             return api
         end
         -- Hàm tạo Slider (thanh trượt)
+        function tabObj:CreateSlider(config)
+            config = config or {}
+            local name = config.Name or "Slider"
+            local range = config.Range or {0, 100}
+            local inc = config.Increment or 1
+            local suffix = config.Suffix or ""
+            local init = config.CurrentValue or range[1]
+            local callback = config.Callback or function() end
+
+            local sliderContainer = Instance.new("Frame")
+            sliderContainer.Name = "Slider_"..name
+            sliderContainer.Parent = contentScroll
+            sliderContainer.BackgroundTransparency = 1
+            sliderContainer.Size = UDim2.new(1, 0, 0, 45)
+
+            local nameLabel = Instance.new("TextLabel")
+            nameLabel.Parent = sliderContainer
+            nameLabel.Size = UDim2.new(0.4, 0, 1, 0)
+            nameLabel.BackgroundTransparency = 1
+            nameLabel.Font = Enum.Font.SourceSans
+            nameLabel.TextColor3 = Color3.new(1,1,1)
+            nameLabel.TextSize = 18
+            nameLabel.Text = name
+            nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+            local track = Instance.new("Frame")
+            track.Parent = sliderContainer
+            track.Size = UDim2.new(0.55, 0, 0, 10)
+            track.Position = UDim2.new(0.42, 0, 0.5, -5)
+            track.BackgroundColor3 = Color3.new(1,1,1)
+            track.BorderColor3 = Color3.new(0,0,0)
+            track.BorderSizePixel = 2
+
+            local handle = Instance.new("Frame")
+            handle.Parent = track
+            handle.Size = UDim2.new(0, 16, 1, 0)
+            handle.BackgroundColor3 = Color3.new(0,0,0)
+            handle.BorderColor3 = Color3.new(1,1,1)
+            handle.BorderSizePixel = 2
+            handle.Position = UDim2.new((init - range[1])/(range[2]-range[1]), 0, 0, 0)
+
+            local valueLabel = Instance.new("TextLabel")
+            valueLabel.Parent = track
+            valueLabel.Size = UDim2.new(0, 50, 1, -20)
+            valueLabel.Position = UDim2.new(0.5, -25, -1, 0) -- nằm trên thanh trượt
+            valueLabel.BackgroundTransparency = 1
+            valueLabel.Font = Enum.Font.SourceSansBold
+            valueLabel.TextColor3 = Color3.new(1,1,1)
+            valueLabel.TextSize = 16
+            valueLabel.Text = tostring(init)..suffix
+            valueLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+            local dragging = false
+            local currentValue = init
+
+            local function updateValueFromX(mouseX)
+                local absPos = track.AbsolutePosition.X
+                local absSize = track.AbsoluteSize.X
+                local clamped = math.clamp(mouseX, absPos, absPos + absSize)
+                local ratio = (clamped - absPos) / absSize
+                local value = math.floor((range[1] + ratio * (range[2]-range[1]))/inc + 0.5) * inc
+                value = math.clamp(value, range[1], range[2])
+                currentValue = value
+                handle.Position = UDim2.new((value - range[1])/(range[2]-range[1]), 0, 0, 0)
+                valueLabel.Text = tostring(value)..suffix
+            end
+
+            handle.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+                   input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                end
+            end)
+
+            track.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    updateValueFromX(input.Position.X)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if dragging and (input.UserInputType == 
+                   Enum.UserInputType.MouseButton1 or input.UserInputType == 
+                   Enum.UserInputType.Touch) then
+                    dragging = false
+                    callback(currentValue)
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and (input.UserInputType == 
+                   Enum.UserInputType.MouseMovement or input.UserInputType == 
+                   Enum.UserInputType.Touch) then
+                    updateValueFromX(input.Position.X)
+                end
+            end)
+
+            contentScroll.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y)
+        end
+
+        -- Thêm tab vào danh sách
+        self.Tabs[#self.Tabs+1] = tabObj
+        return tabObj
+    end
+
+    -- Lưu cửa sổ vừa tạo
+    SimpleUI.ActiveWindow = window
+    return window
+end
+
+-- Hàm tạo thông báo trên màn hình (giống Rayfield:Notify11)
+function SimpleUI:Notify(params)
+    params = params or {}
+    local title = params.Title or ""
+    local content = params.Content or ""
+    local duration = params.Duration or 2
+    -- Tạo frame thông báo
+    local notif = Instance.new("Frame")
+    notif.Name = "Notification"
+    notif.Parent = screenGui
+    notif.Size = UDim2.new(0, 300, 0, 80)
+    notif.Position = UDim2.new(0.5, -150, 0, 10)
+    notif.AnchorPoint = Vector2.new(0.5, 0)
+    notif.BackgroundColor3 = Color3.new(0,0,0)
+    notif.BorderColor3 = Color3.new(1,1,1)
+    notif.BorderSizePixel = 2
+    -- Tiêu đề
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Parent = notif
+    titleLabel.Size = UDim2.new(1, 0, 0, 30)
+    titleLabel.Position = UDim2.new(0, 0, 0, 10)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.TextColor3 = Color3.new(1,1,1)
+    titleLabel.TextSize = 18
+    titleLabel.Text = title
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+    -- Nội dung
+    local contentLabel = Instance.new("TextLabel")
+    contentLabel.Parent = notif
+    contentLabel.Size = UDim2.new(1, -20, 1, -50)
+    contentLabel.Position = UDim2.new(0, 10, 0, 40)
+    contentLabel.BackgroundTransparency = 1
+    contentLabel.Font = Enum.Font.SourceSans
+    contentLabel.TextColor3 = Color3.new(1,1,1)
+    contentLabel.TextSize = 16
+    contentLabel.TextWrapped = true
+    contentLabel.Text = content
+    contentLabel.TextXAlignment = Enum.TextXAlignment.Center
+    -- Tự động xóa sau duration
+    spawn(function()
+        wait(duration)
+        for i = 0, 1, 0.1 do
+            notif.BackgroundTransparency = i
+            titleLabel.TextTransparency = i
+            contentLabel.TextTransparency = i
+            wait(0.05)
+        end
+        notif:Destroy()
+    end)
+end
+
+return SimpleUI
