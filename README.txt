@@ -48,7 +48,11 @@ tab:CreateDropdown({
     Name = "Dropdown",
     Options = {},
     Multi = false,
-    Callback = function(v) 
-        print(v)
+    Callback = function(v) -- v only be nil when user click refesh button
+        if v ~= nil then
+            print(v)
+        else
+            return {} -- the list will be update to Options when refesh
+        end
     end
 })
