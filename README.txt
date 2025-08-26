@@ -56,3 +56,5 @@ tab:CreateDropdown({
         end
     end
 })
+-- you can local yourdropdown = tab:CreateDropdown....
+-- and use yourdropdown:Refresh()
